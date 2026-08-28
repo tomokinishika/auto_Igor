@@ -21,6 +21,12 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
         return
 
     for angle in sorted_angles:
+        # 【変更点1】「角度なし」の場合はここでスキップする
+        if angle == '角度なし':
+            print("\n--- 「角度なし」のファイルはスキップします ---")
+            continue
+
+    for angle in sorted_angles:
         file_list = angle_groups[angle]
         print(f"\n--- 角度 [{angle}] の処理を開始 (ファイル数: {len(file_list)}) ---")
         
@@ -32,7 +38,7 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
         
         # [Step B] coinchp.exe の実行
         print("coinchp を実行中...")
-        subprocess.run([exe_path], capture_output=True, text=True)
+        subprocess.run([exe_path])
         print("coinchp の処理が完了しました。")
 
         # [Step C] Igor Proでのフォルダ作成と読み込み
