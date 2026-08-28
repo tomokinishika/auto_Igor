@@ -4,13 +4,13 @@ import time
 import win32com.client
 import sys
 
-# 【変更点】自作の input_sort.py から関数を読み込む
+#input_sort.py から関数を読み込む
 from input_sort import group_files_by_angle
 
 def run_coinc_and_igor(angle_groups, sorted_angles):
-    input_filename = "input.txt" 
-    exe_path = "./coinc.exe"     
-    output_filename = "mommap.data" # .dataに変更
+    input_filename = "inputfile.txt" 
+    exe_path = "./coinchp.exe"     
+    output_filename = "momdata.txt" # .dataに変更
     output_abspath = os.path.abspath(output_filename) 
 
     try:
@@ -30,10 +30,10 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
             for filepath in file_list:
                 f.write(f"{filepath}\n")
         
-        # [Step B] coinc.exe の実行
-        print("coinc.exe を実行中...")
+        # [Step B] coinchp.exe の実行
+        print("coinchp を実行中...")
         subprocess.run([exe_path], capture_output=True, text=True)
-        print("coinc.exe の処理が完了しました。")
+        print("coinchp の処理が完了しました。")
 
         # [Step C] Igor Proでのフォルダ作成と読み込み
         igor_path = output_abspath.replace('\\', '\\\\')
