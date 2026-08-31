@@ -5,12 +5,12 @@ import win32com.client
 import sys
 
 #input_sort.py から関数を読み込む
-from input_sort import group_files_by_angle
+from input_sorter import group_files_by_angle
 
 def run_coinc_and_igor(angle_groups, sorted_angles):
     input_filename = "inputfile.txt" 
     exe_path = "./coinchp.exe"     
-    output_filename = "momdata.txt" # .dataに変更
+    output_filename = "momdata.txt" 
     output_abspath = os.path.abspath(output_filename) 
 
     try:
@@ -20,18 +20,17 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
         print("Igor Proの接続に失敗しました。")
         return
 
+    # 【修正】ループを1つにまとめました
     for angle in sorted_angles:
-        # 【変更点1】「角度なし」の場合はここでスキップする
         if angle == '角度なし':
             print("\n--- 「角度なし」のファイルはスキップします ---")
             continue
 
-    for angle in sorted_angles:
         file_list = angle_groups[angle]
         print(f"\n--- 角度 [{angle}] の処理を開始 (ファイル数: {len(file_list)}) ---")
         
-        # [Step A] インプットファイルの作成
-        with open(input_filename, 'w', encoding='utf-8') as f:
+        # 【修正】encoding='shift_jis' に変更
+        with open(input_filename, 'w', encoding='shift_jis') as f:
             f.write(f"{len(file_list)}\n")
             for filepath in file_list:
                 f.write(f"{filepath}\n")
@@ -42,19 +41,28 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
         print("coinchp の処理が完了しました。")
 
         # [Step C] Igor Proでのフォルダ作成と読み込み
-        igor_path = output_abspath.replace('\\', '\\\\')
+        # 【修正】区切り文字をスラッシュに変更
+        igor_path = output_abspath.replace('\\', '/')
         
-        # 1. Igor上に角度のデータフォルダを作成し、そこへ移動 (/O=上書き許可, /S=カレントフォルダに設定)
-        igor.Execute(f"NewDataFolder /O /S root:'{angle}'")
-        
-        # 2. データを読み込む（移動先のフォルダ内に直接格納されます）
-        igor_command = f'LoadWave /G /A=mommap "{igor_path}"'
-        igor.Execute(igor_command)
-        
-        # 3. ルートフォルダに戻る（次のループに備えるため）
-        igor.Execute("SetDataFolder root:")
-        
-        print(f"Igor Proの root:'{angle}' フォルダにデータを読み込ませました")
+        # 【追加】ファイルが存在するかチェック
+        if not os.path.exists(output_abspath):
+            print(f"エラー: {output_filename} が生成されていません。")
+            continue
+
+        try:
+            # 1. フォルダ作成・移動
+            igor.Execute(f"NewDataFolder /O /S root:'{angle}'")
+            
+            # 2. 【修正】/A=mommap を削除し、/O /Q を追加
+            igor_command = f'LoadWave /G /O /Q "{igor_path}"'
+            igor.Execute(igor_command)
+            
+            # 3. ルートフォルダに戻る
+            igor.Execute("SetDataFolder root:")
+            
+            print(f"Igor Proの root:'{angle}' フォルダにデータを読み込ませました")
+        except Exception as e:
+            print(f"Igor読み込みエラー: {e}")
 
         time.sleep(1)
 
