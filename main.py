@@ -41,23 +41,35 @@ def run_coinc_and_igor(angle_groups, sorted_angles):
         print("coinchp の処理が完了しました。")
 
         # [Step C] Igor Proでのフォルダ作成と読み込み
-        # 【修正】区切り文字をスラッシュに変更
         igor_path = output_abspath.replace('\\', '/')
         
-        # 【追加】ファイルが存在するかチェック
         if not os.path.exists(output_abspath):
             print(f"エラー: {output_filename} が生成されていません。")
             continue
 
         try:
-            # 1. フォルダ作成・移動
-            igor.Execute(f"NewDataFolder /O /S root:'{angle}'")
+            # --- Pythonでmomdata.txtの1行目を読み取ってリスト化 ---
+            with open(output_abspath, 'r', encoding='utf-8', errors='ignore') as f:
+                headers = f.readline().strip().split()
+                # headersの中身は ['px1', 'py1', 'pz1', ...] になります
+
+            # 1. 既存フォルダを削除してリセット（上書き警告や名前衝突を完全に防ぐため）
+            igor.Execute(f"KillDataFolder /Z root:'{angle}'")
+            igor.Execute(f"NewDataFolder /S root:'{angle}'")
             
-            # 2. 【修正】/A=mommap を削除し、/O /Q を追加
-            igor_command = f'LoadWave /G /O /Q "{igor_path}"'
-            igor.Execute(igor_command)
+            # 2. データを読み込む（この時点では wave0, wave1... として読み込まれる）
+            igor.Execute(f'LoadWave /G /A /Q "{igor_path}"')
             
-            # 3. ルートフォルダに戻る
+            # 3. 強制リネーム: wave0, wave1... を px1, py1... に順番に書き換える
+            for i, correct_name in enumerate(headers):
+                try:
+                    # Igorの Rename コマンドをPythonから1つずつ実行
+                    igor.Execute(f"Rename wave{i}, {correct_name}")
+                except Exception:
+                    # 万が一最初から正しい名前で読み込めていた場合のエラーは無視
+                    pass
+            
+            # 4. ルートフォルダに戻る
             igor.Execute("SetDataFolder root:")
             
             print(f"Igor Proの root:'{angle}' フォルダにデータを読み込ませました")
