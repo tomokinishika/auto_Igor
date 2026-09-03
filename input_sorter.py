@@ -29,9 +29,9 @@ def group_files_by_angle(target_folder_names):
             if os.path.isfile(file_path):
                 found_any_file = True
                 
-                # 【修正1】日付などが誤検知されないよう、必ず「_3桁」を探す
+                # 正規表現3桁：日付などが誤検知されないよう、必ず「_3桁」を探す
                 matches = re.findall(r'_(\d{3})', filename)
-                # 【修正1】sorter用s01_090を「s2桁」を探す
+                # sorter用s01_090を「s2桁」を探す
                 sort_matches = re.findall(r's(\d{2})', filename)
                 
                 # 1. "260723_001_030" のように「_3桁の数字」が2回以上出現する場合
